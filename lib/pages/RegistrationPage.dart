@@ -1,27 +1,39 @@
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_async_autocomplete/flutter_async_autocomplete.dart';
+import 'package:namer_app/components/forms/add_student_form.dart';
+import 'package:namer_app/core/entities/Facility.dart';
+import 'package:namer_app/core/utilities/app_config.dart';
+import 'package:namer_app/core/utilities/helpers.dart';
+import 'package:namer_app/core/utilities/local_response_model.dart';
 import 'package:namer_app/customs/custom_phone_text_field.dart';
 import 'package:namer_app/customs/custom_text_fields.dart';
+import 'package:namer_app/services/api/auth_requests.dart';
 
-class StudentDetail {
-  final TextEditingController facilityRegSno;
-  final TextEditingController admissionNo;
+// class FacilityController extends TextEditingController {
+//   int? facilityId;
+//   FacilityController({super.text, this.facilityId});
+// }
 
-  const StudentDetail(
-      {required this.facilityRegSno, required this.admissionNo});
+// class StudentDetail {
+//   final FacilityController facilityRegSno;
+//   final TextEditingController admissionNo;
 
-  Map<String, dynamic> toMap() {
-    return <String, dynamic>{
-      'facilityRegSno': facilityRegSno.text,
-      'Admission_No': admissionNo.text
-    };
-  }
-}
+//   const StudentDetail(
+//       {required this.facilityRegSno, required this.admissionNo});
+
+//   Map<String, dynamic> toMap() {
+//     return <String, dynamic>{
+//       'Facility_Reg_Sno': facilityRegSno.facilityId,
+//       'Admission_No': admissionNo.text
+//     };
+//   }
+// }
 
 class AccountInfoControllers {
   final TextEditingController fullNameController;
-  final TextEditingController phoneNumberController;
+  final MobileNumberController phoneNumberController;
   final TextEditingController usernameController;
   final TextEditingController emailController;
   final List<StudentDetail> studentDetails;
@@ -29,10 +41,10 @@ class AccountInfoControllers {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'Parent_Name': fullNameController.text,
-      'Mobile_No': phoneNumberController.text,
+      'Mobile_No': phoneNumberController.prefix! + phoneNumberController.text,
       'User_Name': usernameController.text,
       'Email_Address': emailController.text,
-      'SDetails': studentDetails.map((e) => e.toMap())
+      'SDetails': studentDetails.map((e) => e.toMap()).toList()
     };
   }
 
@@ -52,6 +64,7 @@ class RegistrationPage extends StatefulWidget {
 }
 
 class _RegistrationPageState extends State<RegistrationPage> {
+  late BuildContext _buildContext;
   int currentStep = 0;
   final _accountInfoFormKey = GlobalKey<FormState>();
   final _studentDetailsFormKey = GlobalKey<FormState>();
@@ -62,49 +75,124 @@ class _RegistrationPageState extends State<RegistrationPage> {
     super.initState();
     _controllers = AccountInfoControllers(
         fullNameController: TextEditingController(),
-        phoneNumberController: TextEditingController(),
+        phoneNumberController: MobileNumberController(),
         usernameController: TextEditingController(),
         emailController: TextEditingController(),
         studentDetails: [
           StudentDetail(
               admissionNo: TextEditingController(),
-              facilityRegSno: TextEditingController())
+              facilityRegSno: FacilityController())
         ]);
   }
 
-  @override
-  void dispose() {
-    // _controllers.fullNameController.dispose();
-    // _controllers.phoneNumberController.dispose();
-    // _controllers.usernameController.dispose();
-    // _controllers.emailController.dispose();
-    super.dispose();
-  }
+  void _completeFormToContinueSnackBar(String message) {
+    final snackBar = SnackBar(
+      content: const Text('Complete the form to continue.'),
+      action: SnackBarAction(
+        label: 'Ok',
+        onPressed: () {
+          // Some code to undo the change.
+        },
+      ),
+    );
 
-  String? _notEmptyValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Cannot be blank';
+    var messenger = ScaffoldMessenger.of(context);
+    if (messenger.mounted) {
+      messenger.removeCurrentSnackBar();
+      messenger.showSnackBar(snackBar);
     } else {
-      return null;
+      messenger.showSnackBar(snackBar);
     }
   }
 
-  void _stepContinue() {
+  void _setTapped(int step) {
+    setState(() {
+      final isLastStep = step == 1;
+      if (isLastStep) {
+        final isValidAccountsInfo =
+            _accountInfoFormKey.currentState!.validate();
+        if (isValidAccountsInfo) {
+          currentStep = step;
+        } else {
+          _completeFormToContinueSnackBar('Comple the form to continue');
+        }
+      } else {
+        currentStep = step;
+      }
+    });
+  }
+
+  void _stepContinue(BuildContext context) {
     final isLastStep = (currentStep == getSteps().length - 1);
     if (isLastStep) {
       final isValidStudentDetails =
           _studentDetailsFormKey.currentState!.validate();
-      _handleValidStudentDetails(isValidStudentDetails);
+      _handleValidStudentDetails(isValidStudentDetails, context);
     } else {
       final isValidAccountInfo = _accountInfoFormKey.currentState!.validate();
       _handleValidAccountInfo(isValidAccountInfo);
     }
   }
 
-  _handleValidStudentDetails(bool isValid) {
+  Future<Map<String, dynamic>> _requestParentRegistration(
+      Map<String, dynamic> body) async {
+    final response = await StudentDetailsApi.parentReg.sendRequest(body: body);
+    return Future.value(response);
+  }
+
+  void registeredParentSucessfully(BuildContext context) {
+    Navigator.of(context).pop();
+  }
+
+  // String _identifyRegistrationErrorMessage(String message) {
+  //   final facilityPattern = RegExp(r'Facility No (\d+)');
+  //   final admissionPattern = RegExp(r'Admission No (\d+)');
+  //   if (facilityPattern.hasMatch(message)) {
+  //     //final value = facilityPattern.firstMatch(message)!.group(1);
+  //     final facilityName = _controllers.studentDetails[0].facilityRegSno.text;
+  //     return '$facilityName is invalid.';
+  //   } else if (admissionPattern.hasMatch(message)) {
+  //     var admissionNo = admissionPattern.firstMatch(message)!.group(1);
+  //     return 'Admission number $admissionNo is invalid.';
+  //   } else {
+  //     return message;
+  //   }
+  // }
+
+  void parseParentRegistrationResponse(
+      Map<String, dynamic> response, NavigatorState navigator) {
+    if (response['response'] == null) {
+      showErrorQuickAlert(navigator.context, 'Failed', response['message']);
+      return;
+    }
+    final hasErrorResponse =
+        LocalResponseModel.hasErrorResponse(response['response']);
+    if (hasErrorResponse) {
+      var statusMessage =
+          LocalResponseModel.getErrorStatusFromResponse(response['response']);
+      statusMessage = identifyStudentRegistrationErrorMessage(
+          statusMessage, _controllers.studentDetails.first);
+      showErrorQuickAlert(navigator.context, 'Failed', statusMessage);
+    } else {
+      showSuccessQuickAlert(navigator.context, 'Success',
+          'Registered successfully!', registeredParentSucessfully);
+    }
+  }
+
+  void _confirmRegistrationClicked(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    showFetchingQuickAlert(navigator.context, 'You are being registered...');
+    final body = _controllers.toMap();
+    log(body.toString());
+    final response = await _requestParentRegistration(body);
+    if (navigator.context.mounted) navigator.pop();
+    parseParentRegistrationResponse(response, navigator);
+  }
+
+  _handleValidStudentDetails(bool isValid, BuildContext context) {
     if (isValid) {
-      final body = _controllers.toMap();
-      log(body.toString());
+      showConfirmQuickAlert(context, 'Are you sure?', 'Do you want to register',
+          _confirmRegistrationClicked);
     }
   }
 
@@ -113,6 +201,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
       setState(() {
         currentStep += 1;
       });
+    } else {
+      _completeFormToContinueSnackBar('Complete the form to continue.');
     }
   }
 
@@ -122,94 +212,85 @@ class _RegistrationPageState extends State<RegistrationPage> {
         state: currentStep > 0 ? StepState.complete : StepState.indexed,
         isActive: currentStep >= 0,
         title: const Text("Account Info"),
-        content: Form(
-          key: _accountInfoFormKey,
-          child: Column(
-            children: [
-              CustomTextFormField(
-                  validator: _notEmptyValidator,
-                  labelText: 'Full name',
-                  hintText: 'Full name',
-                  controller: _controllers.fullNameController,
-                  prefixIcon: Icons.person,
-                  textCapitalization: TextCapitalization.words,
-                  inputFormatters: [LengthLimitingTextInputFormatter(255)]),
-              const SizedBox(
-                height: 12,
-              ),
-              CustomPhoneFormField(
-                  isRequired: true,
-                  hintText: 'Mobile Number',
-                  controller: _controllers.phoneNumberController),
-              const SizedBox(
-                height: 12,
-              ),
-              CustomTextFormField(
-                  validator: _notEmptyValidator,
-                  labelText: 'Username',
-                  hintText: 'Username',
-                  controller: _controllers.usernameController,
-                  prefixIcon: Icons.verified_user,
-                  textCapitalization: TextCapitalization.none,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(255),
-                    FilteringTextInputFormatter.deny(RegExp(r'\s'))
-                  ]),
-              const SizedBox(
-                height: 12,
-              ),
-              CustomTextFormField(
-                  validator: _notEmptyValidator,
-                  labelText: 'Email Address',
-                  hintText: 'Email Address',
-                  controller: _controllers.emailController,
-                  prefixIcon: Icons.email,
-                  textCapitalization: TextCapitalization.none,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(255),
-                    FilteringTextInputFormatter.deny(RegExp(r'\s'))
-                  ]),
-            ],
-          ),
-        ),
+        content: getAccountInfoForm(),
       ),
       Step(
         state: currentStep > 1 ? StepState.complete : StepState.indexed,
         isActive: currentStep >= 1,
         title: const Text("Student details"),
-        content: Form(
-          key: _studentDetailsFormKey,
-          child: Column(
-            children: [
-              CustomTextFormField(
-                  validator: _notEmptyValidator,
-                  labelText: 'Facility',
-                  hintText: 'Facility',
-                  controller: _controllers.studentDetails[0].facilityRegSno,
-                  prefixIcon: Icons.school,
-                  textCapitalization: TextCapitalization.none,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(255),
-                  ]),
-              CustomTextFormField(
-                  validator: _notEmptyValidator,
-                  labelText: 'Admission Number',
-                  hintText: 'Admission Number',
-                  controller: _controllers.studentDetails[0].admissionNo,
-                  prefixIcon: Icons.hdr_auto,
-                  textCapitalization: TextCapitalization.none,
-                  inputFormatters: [
-                    LengthLimitingTextInputFormatter(255),
-                  ]),
-            ],
-          ),
-        ),
+        content: getStudentDetailsForm(
+            _studentDetailsFormKey, _controllers.studentDetails[0]),
       ),
     ];
   }
 
+  Form getAccountInfoForm() {
+    return Form(
+      key: _accountInfoFormKey,
+      onChanged: () {
+        Form.of(primaryFocus!.context!).save();
+      },
+      child: Column(
+        children: [
+          CustomTextFormField(
+              validator: cannotBeBlankValidator,
+              labelText: 'Full name',
+              hintText: 'Full name',
+              controller: _controllers.fullNameController,
+              prefixIcon: Icons.person,
+              textCapitalization: TextCapitalization.words,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(255),
+                FilteringTextInputFormatter.deny(
+                  RegExp(r'[^a-zA-Z]\s'),
+                )
+              ]),
+          const SizedBox(
+            height: 12,
+          ),
+          CustomPhoneFormField(
+              isRequired: true,
+              hintText: 'Mobile Number',
+              controller: _controllers.phoneNumberController),
+          const SizedBox(
+            height: 12,
+          ),
+          CustomTextFormField(
+              validator: cannotBeBlankValidator,
+              labelText: 'Username',
+              hintText: 'Username',
+              controller: _controllers.usernameController,
+              prefixIcon: Icons.verified_user,
+              textCapitalization: TextCapitalization.none,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(255),
+                FilteringTextInputFormatter.deny(RegExp(r'\s')),
+                FilteringTextInputFormatter.deny(
+                  RegExp(r'[^a-zA-Z0-9]'),
+                )
+              ]),
+          const SizedBox(
+            height: 12,
+          ),
+          CustomTextFormField(
+              validator: (value) => validateEmail(value, true),
+              labelText: 'Email Address',
+              hintText: 'Email Address',
+              controller: _controllers.emailController,
+              prefixIcon: Icons.email,
+              textCapitalization: TextCapitalization.none,
+              inputFormatters: [
+                LengthLimitingTextInputFormatter(255),
+                FilteringTextInputFormatter.deny(RegExp(r'\s')),
+              ]),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    _buildContext = context;
     return SafeArea(
       child: Scaffold(
         body: Padding(
@@ -231,13 +312,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
                     : setState(() {
                         currentStep -= 1;
                       }),
-                onStepContinue: _stepContinue,
-                onStepTapped: (step) => setState(() {
-                  final isValid = _accountInfoFormKey.currentState!.validate();
-                  if (step == 1 && isValid) {
-                    currentStep = step;
-                  }
-                }),
+                onStepContinue: () => _stepContinue(context),
+                onStepTapped: _setTapped,
                 steps: getSteps(),
               ),
               Padding(

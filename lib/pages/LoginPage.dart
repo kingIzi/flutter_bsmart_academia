@@ -11,6 +11,7 @@ import 'package:namer_app/pages/RegistrationPage.dart';
 import 'package:namer_app/pages/StudentAccountPage.dart';
 import 'package:namer_app/services/api/auth_requests.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:namer_app/services/shared_prefs_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -43,10 +44,10 @@ class _LoginPageState extends State<LoginPage> {
           child: SafeArea(
             child: LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
-              return const Scaffold(
+              return Scaffold(
                 backgroundColor: Color(0xffF4F6F8),
                 body: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: SingleChildScrollView(
                     child: LoginForm(),
                   ),
@@ -59,9 +60,13 @@ class _LoginPageState extends State<LoginPage> {
 }
 
 class LoginForm extends StatefulWidget {
-  const LoginForm({
+  LoginForm({
     super.key,
   });
+
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final sharedPrefs = SharedPrefsService();
 
   void _createRegistrationRoute(BuildContext context) {
     final registrationPage = _registrationRoute();
@@ -71,15 +76,31 @@ class LoginForm extends StatefulWidget {
   Route _registrationRoute() {
     return PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            RegistrationPage(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          final curve = CurveTween(curve: Curves.easeIn);
-          final tween = Tween(begin: begin, end: end).chain(curve);
-          final offsetAnimation = animation.drive(tween);
-          return SlideTransition(position: offsetAnimation, child: child);
-        });
+            const RegistrationPage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            simpleSlideRouteTransition(
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+                const Offset(1.0, 0.0),
+                Offset.zero,
+                CurveTween(curve: Curves.easeIn)));
+  }
+
+  Route _studentAccountsPageRoute(List<GetSDetail> students) {
+    return PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            StudentAccountPage(students: students),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            simpleSlideRouteTransition(
+                context,
+                animation,
+                secondaryAnimation,
+                child,
+                const Offset(0.0, 1.0),
+                Offset.zero,
+                CurveTween(curve: Curves.easeIn)));
   }
 
   void showLoginFailedMessage(NavigatorState navigator, Iterable response) {
@@ -102,8 +123,8 @@ class LoginForm extends StatefulWidget {
     showFetchingQuickAlert(context, 'Attempting login...');
     final navigator = Navigator.of(context);
     try {
-      final response =
-          await LoginUser.getSDetails.sendRequest(body: loginRequestBody);
+      final response = await StudentDetailsApi.getSDetails
+          .sendRequest(body: loginRequestBody);
       if (navigator.context.mounted) navigator.pop();
       if (response['response'] == null) throw response['message'];
       _determineLoginState(navigator, response['response']);
@@ -112,15 +133,26 @@ class LoginForm extends StatefulWidget {
     }
   }
 
+  void _pushStudentAccountsPage(NavigatorState navigator, Iterable response) {
+    final students = (response.first['Students'] as List)
+        .map((e) => GetSDetail.fromJson(e))
+        .toList();
+    if (navigator.context.mounted) {
+      final studentsAccountPage = _studentAccountsPageRoute(students);
+      navigator.pushReplacement(studentsAccountPage);
+    }
+  }
+
   void _handleLoginSuccess(NavigatorState navigator, Iterable response) {
     assert(response.isNotEmpty);
-    var items = response.first['Students'] as List;
-    var students = items.map((e) => GetSDetail.fromJson(e)).toList();
-    if (navigator.context.mounted) {
-      navigator.push(MaterialPageRoute(
-          builder: (context) => StudentAccountPage(
-                students: students,
-              )));
+    try {
+      sharedPrefs
+          .storeString('User_Name', _usernameController.text)
+          .then((onValue) => _pushStudentAccountsPage(navigator, response))
+          .catchError((onError) => throw onError);
+    } catch (e) {
+      showErrorQuickAlert(
+          navigator.context, 'Failed', 'An unexpected error occured.');
     }
   }
 
@@ -152,6 +184,8 @@ class _LoginFormState extends State<LoginForm> {
         LoginFormFields(
           onPushRegistrationPage: widget._createRegistrationRoute,
           onLoginClicked: widget._handleLoginClicked,
+          usernameController: widget._usernameController,
+          passwordController: widget._passwordController,
         )
       ],
     );
@@ -162,10 +196,14 @@ class LoginFormFields extends StatelessWidget {
   LoginFormFields(
       {super.key,
       required this.onPushRegistrationPage,
-      required this.onLoginClicked});
+      required this.onLoginClicked,
+      required this.usernameController,
+      required this.passwordController});
   final _loginFormKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+  //final _usernameController = TextEditingController();
+  //final _passwordController = TextEditingController();
+  final TextEditingController usernameController;
+  final TextEditingController passwordController;
   final Function onPushRegistrationPage;
   final Function onLoginClicked;
 
@@ -187,8 +225,8 @@ class LoginFormFields extends StatelessWidget {
 
   Map<String, String> getLoginBody() {
     final body = {
-      'User_Name': _usernameController.text,
-      'Password': _passwordController.text
+      'User_Name': usernameController.text,
+      'Password': passwordController.text
     };
     return body;
   }
@@ -218,7 +256,7 @@ class LoginFormFields extends StatelessWidget {
               validator: _validateUsername,
               labelText: 'Username',
               hintText: 'Enter username',
-              controller: _usernameController,
+              controller: usernameController,
               prefixIcon: Icons.email,
               textCapitalization: TextCapitalization.none,
               inputFormatters: [
@@ -232,7 +270,7 @@ class LoginFormFields extends StatelessWidget {
             validator: _validatePassword,
             labelText: 'Password',
             hintText: 'Enter password',
-            controller: _passwordController,
+            controller: passwordController,
             prefixIcon: Icons.lock,
             inputFormatters: [LengthLimitingTextInputFormatter(255)],
           ),

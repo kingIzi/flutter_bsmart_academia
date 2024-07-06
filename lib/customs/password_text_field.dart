@@ -40,12 +40,12 @@ class _CustomTextPasswordFormFieldState
     });
   }
 
-  @override
-  void dispose() {
-    widget.controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   widget.controller.dispose();
+  //   _focusNode.dispose();
+  //   super.dispose();
+  // }
 
   void _clearText() {
     _obscureText = !_obscureText;

@@ -108,6 +108,10 @@ dependencies:
   loader_overlay: ^4.0.0
   quickalert: ^1.1.0
   intl_phone_field: ^3.2.0
+  flutter_async_autocomplete: ^0.1.1
+  intl_phone_number_input: ^0.7.4
+  email_validator: ^3.0.0
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:

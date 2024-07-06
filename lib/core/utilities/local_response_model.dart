@@ -41,14 +41,23 @@ class LocalResponseModel {
     if (response.isEmpty || response.length > 1) {
       return false;
     } else {
-      var item = response.first;
-      var hasStatus = item.keys.any((key) => key.toLowerCase() == 'status');
-      return hasStatus && item.keys.length == 1;
+      final hasStatus =
+          response.first.keys.any((key) => key.toLowerCase() == 'status');
+      return hasStatus && response.first.keys.length == 1;
     }
   }
 
   static String getErrorStatusFromResponse(Iterable response) {
-    assert(response.isNotEmpty || response.length == 1);
-    return response.first['status'];
+    assert(response.isNotEmpty ||
+        response.length == 1 ||
+        response.first.keys.length == 1);
+    try {
+      final key = response.first.keys.firstWhere(
+          (k) => k.toLowerCase() == 'status',
+          orElse: () => throw Exception('An unexpected error occured.'));
+      return response.first[key as String];
+    } on Exception catch (e) {
+      return e.toString();
+    }
   }
 }

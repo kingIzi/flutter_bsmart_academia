@@ -37,12 +37,12 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     });
   }
 
-  @override
-  void dispose() {
-    widget.controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
+  // @override
+  // void dispose() {
+  //   //widget.controller.dispose();
+  //   _focusNode.dispose();
+  //   super.dispose();
+  // }
 
   void _clearText() {
     widget.controller.clear();
