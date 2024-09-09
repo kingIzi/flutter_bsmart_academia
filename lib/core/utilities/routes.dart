@@ -4,6 +4,7 @@ import 'package:namer_app/core/utilities/app_config.dart';
 import 'package:namer_app/pages/AddStudentAccountPage.dart';
 import 'package:namer_app/pages/DashboardPage.dart';
 import 'package:namer_app/pages/StudentAccountPage.dart';
+import 'package:namer_app/pages/UserProfilePage.dart';
 
 Route getAddStudentAccountPageRoute(
     Offset begin, Offset end, CurveTween curveTween) {
@@ -22,6 +23,33 @@ Route getAddStudentAccountPageRoute(
               begin,
               end,
               curveTween));
+}
+
+Route getUserProfilePageRoute(Offset begin, Offset end, CurveTween curveTween) {
+  return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          Userprofilepage(),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          simpleSlideRouteTransition(
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+              // const Offset(0.0, 1.0),
+              // Offset.zero,
+              // CurveTween(curve: Curves.easeIn)
+              begin,
+              end,
+              curveTween));
+}
+
+Route getGeneralAnimatePageRoute(
+    Widget page, Offset begin, Offset end, CurveTween curveTween) {
+  return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+          simpleSlideRouteTransition(context, animation, secondaryAnimation,
+              child, begin, end, curveTween));
 }
 
 MaterialPageRoute parseStudentAccountPageRoute(RouteSettings settings) {

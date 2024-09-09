@@ -64,7 +64,7 @@ class _AddstudentaccountpageState extends State<Addstudentaccountpage> {
         AddStudentForm(username: username, studentDetails: studentDetails);
     showFetchingQuickAlert(context, 'Adding student...');
     try {
-      StudentDetailsApi.addStudent
+      SchoolDetailsApi.addStudent
           .sendRequest(body: body.toMap())
           .then((response) {
         if (context.mounted) _popNavigator();

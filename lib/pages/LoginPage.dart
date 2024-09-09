@@ -123,7 +123,7 @@ class LoginForm extends StatefulWidget {
     showFetchingQuickAlert(context, 'Attempting login...');
     final navigator = Navigator.of(context);
     try {
-      final response = await StudentDetailsApi.getSDetails
+      final response = await SchoolDetailsApi.getSDetails
           .sendRequest(body: loginRequestBody);
       if (navigator.context.mounted) navigator.pop();
       if (response['response'] == null) throw response['message'];

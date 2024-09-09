@@ -27,12 +27,6 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         ),
         home: const LoginPage(),
-        // home: Dashboardpage(
-        //     student: GetSDetail(
-        //         sFullName: 'Amaye Kadima',
-        //         className: 'FORM FOUR',
-        //         sectionName: 'A',
-        //         acadYear: '2023-2024')),
         onGenerateRoute: (settings) {
           switch (settings.name) {
             case '/studentAccountPage':

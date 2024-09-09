@@ -50,8 +50,7 @@ List<Facility> _determineFacilitiesSuggestionsState(
 
 Future<List<Facility>> getSuggestions(String key) async {
   try {
-    final response =
-        await StudentDetailsApi.getFacilities.sendRequest(body: {});
+    final response = await SchoolDetailsApi.getFacilities.sendRequest(body: {});
     if (response['response'] == null) throw response['message'];
     return _determineFacilitiesSuggestionsState(
         response['response'], key.toLowerCase());

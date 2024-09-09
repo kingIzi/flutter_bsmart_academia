@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:namer_app/core/entities/GetSDetail.dart';
+import 'package:namer_app/core/utilities/routes.dart';
+import 'package:namer_app/pages/TimeTablePage.dart';
 
 class Dashboardpage extends StatefulWidget {
   final GetSDetail student;
@@ -45,6 +47,25 @@ class _DashboardpageState extends State<Dashboardpage> {
       {'icon': Icons.lock, 'label': 'Change Password'},
       {'icon': Icons.logout, 'label': 'Switch Account'},
     ];
+  }
+
+  void _pushTimeTablePage() {
+    final timeTablePage = TimeTablePage(student: widget.student);
+    final dashboardPage = getGeneralAnimatePageRoute(
+        timeTablePage,
+        const Offset(1.0, 0.0),
+        Offset.zero,
+        CurveTween(curve: Curves.easeInOut));
+    Navigator.of(context).push(dashboardPage);
+  }
+
+  void _navItemClicked(index) {
+    switch (index) {
+      case 0:
+        _pushTimeTablePage();
+      default:
+        throw UnimplementedError('Module not yet implemented');
+    }
   }
 
   @override
@@ -284,7 +305,6 @@ class _DashboardpageState extends State<Dashboardpage> {
                                     return SizedBox(
                                       width: double.maxFinite,
                                       height: 101,
-                                      //color: Colors.redAccent,
                                       child: Card(
                                         elevation: 1,
                                         color: const Color.fromRGBO(
@@ -300,7 +320,9 @@ class _DashboardpageState extends State<Dashboardpage> {
                                           child: InkWell(
                                             borderRadius:
                                                 BorderRadius.circular(10.0),
-                                            onTap: () {},
+                                            onTap: () {
+                                              _navItemClicked(index);
+                                            },
                                             child: Padding(
                                               padding:
                                                   const EdgeInsets.all(16.0),
@@ -329,39 +351,6 @@ class _DashboardpageState extends State<Dashboardpage> {
                                         ),
                                       ),
                                     );
-
-                                    // return Container(
-                                    //   width: double.maxFinite,
-                                    //   height: 101,
-                                    //   decoration: BoxDecoration(
-                                    //       color: const Color.fromRGBO(
-                                    //           230, 240, 240, 1),
-                                    //       borderRadius:
-                                    //           BorderRadius.circular(20.0)),
-                                    //   child: Padding(
-                                    //     padding: const EdgeInsets.all(16.0),
-                                    //     child: Column(
-                                    //       crossAxisAlignment:
-                                    //           CrossAxisAlignment.start,
-                                    //       children: [
-                                    //         Icon(
-                                    //           navItems[index]['icon'],
-                                    //           size: 54,
-                                    //           color: const Color.fromRGBO(
-                                    //               0, 103, 105, 1),
-                                    //         ),
-                                    //         const SizedBox(
-                                    //           height: 12,
-                                    //         ),
-                                    //         Text(
-                                    //           navItems[index]['label'],
-                                    //           style:
-                                    //               const TextStyle(fontSize: 20),
-                                    //         )
-                                    //       ],
-                                    //     ),
-                                    //   ),
-                                    // );
                                   })),
                             ),
                           ))

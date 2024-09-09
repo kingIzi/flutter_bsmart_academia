@@ -46,6 +46,12 @@ class _StudentAccountPageState extends State<StudentAccountPage> {
     Navigator.of(context).push(addStudentAccountPage);
   }
 
+  void _pushUserProfilePage() {
+    final userProfilePage = getUserProfilePageRoute(const Offset(1.0, 0.0),
+        Offset.zero, CurveTween(curve: Curves.easeInOut));
+    Navigator.of(context).push(userProfilePage);
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -87,7 +93,7 @@ class _StudentAccountPageState extends State<StudentAccountPage> {
                                 ),
                               ),
                               IconButton(
-                                onPressed: () {},
+                                onPressed: _pushUserProfilePage,
                                 icon: const Icon(Icons.person),
                                 color: Theme.of(context).colorScheme.primary,
                                 style: IconButton.styleFrom(

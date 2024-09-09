@@ -136,7 +136,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   Future<Map<String, dynamic>> _requestParentRegistration(
       Map<String, dynamic> body) async {
-    final response = await StudentDetailsApi.parentReg.sendRequest(body: body);
+    final response = await SchoolDetailsApi.parentReg.sendRequest(body: body);
     return Future.value(response);
   }
 
